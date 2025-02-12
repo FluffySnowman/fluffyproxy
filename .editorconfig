@@ -25,6 +25,7 @@ tab_width = 2
 
 [*.go]
 tab_width = 4
+max_line_length = 80
 
 # makefile override for tabs instead of spaces
 # since makefiles is dependant on tabs oof 🫡

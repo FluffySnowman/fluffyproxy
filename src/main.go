@@ -1,17 +1,13 @@
 package main
 
 import (
-	"fmt"
-	// "fmt"
+	"flag"
+	"io"
 	"net"
 	"os"
 
-	// "net/http"
-
 	pl "github.com/fluffysnowman/prettylogger"
 )
-
-// const TCP_LISTEN_ADDR = "0.0.0.0:8084"
 
 const (
 	HOST = "0.0.0.0"
@@ -19,53 +15,74 @@ const (
 	TYPE = "tcp"
 )
 
-func handleTCPConnection(conn net.Conn) {
+var targetAddress string
 
-	pl.Log("Received connection from remote: %v", conn.RemoteAddr())
+func handleTCPConnection(clientConn net.Conn) {
+	defer clientConn.Close()
 
-	input_buf := make([]byte, 32)
+	pl.Log("recv conn from client: %v", clientConn.RemoteAddr())
 
-	_, err := conn.Read(input_buf)
+	targetConn, err := net.Dial(TYPE, targetAddress)
 	if err != nil {
-		pl.LogError("[ main.handleTCPConnection ] failed to read connection buffer: %v", err)
-		os.Exit(1)
+		pl.LogError("failed to conn to target service: %v", err)
+		return
 	}
+	defer targetConn.Close()
 
-    pl.LogDebug("Received data from remote: %s", input_buf)
+	pl.Log("connected to target service?: %v", targetAddress)
 
-	conn.Write([]byte(fmt.Sprintf("hello response to conn.\nHere's your data lol: %s", input_buf)))
-	conn.Close()
+	done := make(chan bool, 2)
+
+	go func() {
+		_, err := io.Copy(targetConn, clientConn)
+		if err != nil && err != io.EOF {
+			pl.LogError("FAILED TO COPY CLIENT -> target: %v", err)
+		}
+		done <- true
+	}()
+
+	go func() {
+		_, err := io.Copy(clientConn, targetConn)
+		if err != nil && err != io.EOF {
+			pl.LogError("ERROR COPYING TARGET -> client: %v", err)
+		}
+		done <- true
+	}()
+
+	<-done
+	<-done
 }
 
 func init() {
 	pl.InitPrettyLogger("SIMPLE2")
+
+	flag.StringVar(&targetAddress, "to", "", "Address to proxy to")
+	flag.Parse()
+
+	if targetAddress == "" {
+		pl.LogError("Addy is required. Specify with -to <ADDRESS >")
+		os.Exit(1)
+	}
 }
 
 func main() {
+	pl.Log("Starting proxy on %s:%s -> %s", HOST, PORT, targetAddress)
 
-	pl.Log("Starting proxy...")
-
-	// getting/starting the tcp listener and then doing shit so it listens to
-	// me
-	tcp_listener, err := net.Listen(TYPE, HOST+":"+PORT)
+	tcpListener, err := net.Listen(TYPE, HOST+":"+PORT)
 	if err != nil {
 		pl.LogError("[ main.main ] failed to initialize tcp listener: %v", err)
 		os.Exit(1)
 	}
+	defer tcpListener.Close()
 
-	defer tcp_listener.Close()
-
-	pl.Log("Starting tcp listen...")
+	pl.Log("Listening for connections...")
 
 	for {
-		TCP_CONN, err := tcp_listener.Accept()
-
+		clientConn, err := tcpListener.Accept()
 		if err != nil {
-			pl.Log("failed to accept tcp conection: %v", err)
-			os.Exit(1)
+			pl.LogError("failed to accept tcp conection: %v", err)
+			continue
 		}
-
-		go handleTCPConnection(TCP_CONN)
+		go handleTCPConnection(clientConn)
 	}
-
 }
