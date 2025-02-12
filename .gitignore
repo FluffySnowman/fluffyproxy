@@ -1,0 +1,25 @@
+# dev env
+
+.ispf_f/
+.ispf_f
+
+# nvim shit
+
+.nvim
+.nvim/
+
+# net
+
+.htp
+.htp/
+
+# notes
+scratch.org
+scratch.md
+
+# sessions
+
+Session.vim
+Session[1,2,3].vim
+
+
