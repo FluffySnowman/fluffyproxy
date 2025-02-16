@@ -1,9 +1,11 @@
+.PHONY: help go/fmt-golines go/run/server go/run/client go/build/all net/serve
 
 GO := go
 PYTHON := python3
 
 SRC_DIR := src
 SRC_MAIN_PATH := $(SRC_DIR)/main.go
+SRC_BUILD_BIN_NAME := prox
 
 PROXY_ARGS += -to
 PROXY_ARGS += localhost:8000
@@ -11,12 +13,47 @@ PROXY_ARGS += localhost:8000
 SRV_DIR := srv
 SRV_CMD := cd $(SRV_DIR) && $(PYTHON) -m http.server -b 0.0.0.0 8000 --directory .
 
+default: help
+
+# shows this help list
+help:
+	@printf '\tMakefile targets\n\n'
+	@awk ' \
+		function trim(s) { \
+			sub(/^[ \t]+/, "", s); \
+			sub(/[ \t]+$$/, "", s); \
+			return s; \
+		} \
+		/^$$/ { help = ""; next } \
+		/^#/ { \
+			help = (help ? help " " trim(substr($$0,2)) : trim(substr($$0,2))); \
+			next; \
+		} \
+		/^[^ \t]+:/ { \
+			target = $$1; sub(/:$$/, "", target); \
+			if (help != "") { \
+				printf "  %-15s %s\n", target, help; \
+			} \
+			help = ""; \
+		}' $(MAKEFILE_LIST)
+	@printf "\n"
+
 go/fmt-golines:
 	cd $(SRC_DIR) && golines --max-len=80 --tab-len=4 -w .
 
-go/run:
-	cd $(SRC_DIR) && $(GO) run . $(PROXY_ARGS)
+# runs server
+go/run/server:
+	cd $(SRC_DIR) && $(GO) run main.go -server
 
+# runs client
+go/run/client:
+	cd $(SRC_DIR) && $(GO) run main.go -client
+
+# builds code and outputs to executable file
+go/build/all:
+	cd $(SRC_DIR) && $(GO) build -o $(SRC_BUILD_BIN_NAME) main.go
+
+# runs http server with python
 net/serve:
 	$(SRV_CMD)
 
