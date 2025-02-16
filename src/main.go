@@ -82,11 +82,11 @@ func SERVER_listenForConnections() {
 
 	for {
 		serverConn, err := serverListener.Accept()
-		pl.Log("[ SERVER ] Received connection from %s", serverConn.RemoteAddr())
 		if err != nil {
 			pl.LogError("failed to accept server connection: %v", err)
 			continue
 		}
+		pl.Log("[ SERVER ] Received connection from %s", serverConn.RemoteAddr())
 		go handleTCPConnection(serverConn)
 	}
 }
@@ -101,8 +101,6 @@ func CLIENT_listenAndForwardToInternalService() {
 		return
 	}
 
-	// pl.Log("[ CLIENT ] Internal service address: %s:%s", INTERNAL_SERVICE_HOST, INTERNAL_SERVICE_PORT)
-
 	for {
 		clientConn, err := clientListener.Accept()
 		if err != nil {
@@ -110,34 +108,38 @@ func CLIENT_listenAndForwardToInternalService() {
 			continue
 		}
 
-		pl.Log("[ CLIENT ] Received connection from %s", clientConn.RemoteAddr())
+		go func(clientConn net.Conn) {
+			defer clientConn.Close()
+			pl.Log("[ CLIENT ] Received connection from %s", clientConn.RemoteAddr())
 
-		internalServiceConn, err := net.Dial(TYPE, INTERNAL_SERVICE_HOST+":"+INTERNAL_SERVICE_PORT)
-		if err != nil {
-			pl.LogError("failed to connect to internal service: %v", err)
-			continue
-		}
-
-		done := make(chan bool, 2)
-
-		go func() {
-			_, err := io.Copy(internalServiceConn, clientConn)
-			if err != nil && err != io.EOF {
-				pl.LogError("failed to copy client -> internal service: %v", err)
+			internalServiceConn, err := net.Dial(TYPE, INTERNAL_SERVICE_HOST+":"+INTERNAL_SERVICE_PORT)
+			if err != nil {
+				pl.LogError("failed to connect to internal service: %v", err)
+				return
 			}
-			done <- true
-		}()
+			defer internalServiceConn.Close()
 
-		go func() {
-			_, err := io.Copy(clientConn, internalServiceConn)
-			if err != nil && err != io.EOF {
-				pl.LogError("failed to copy internal service -> client: %v", err)
-			}
-			done <- true
-		}()
+			done := make(chan bool, 2)
 
-		<-done
-		<-done
+			go func() {
+				_, err := io.Copy(internalServiceConn, clientConn)
+				if err != nil && err != io.EOF {
+					pl.LogError("failed to copy client -> internal service: %v", err)
+				}
+				done <- true
+			}()
+
+			go func() {
+				_, err := io.Copy(clientConn, internalServiceConn)
+				if err != nil && err != io.EOF {
+					pl.LogError("failed to copy internal service -> client: %v", err)
+				}
+				done <- true
+			}()
+
+			<-done
+			<-done
+		}(clientConn)
 	}
 }
 
