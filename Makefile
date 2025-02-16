@@ -38,6 +38,7 @@ help:
 		}' $(MAKEFILE_LIST)
 	@printf "\n"
 
+# formats all go code with golines
 go/fmt-golines:
 	cd $(SRC_DIR) && golines --max-len=80 --tab-len=4 -w .
 
