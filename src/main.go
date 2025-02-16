@@ -36,7 +36,7 @@ func handleTCPConnection(clientConn net.Conn) {
 
 	pl.Log("[ HANDLE ] received connection: %v", clientConn.RemoteAddr())
 
-    targetConn, err := net.Dial(TYPE, CLIENT_IP+":"+CLIENT_PORT)
+	targetConn, err := net.Dial(TYPE, CLIENT_IP+":"+CLIENT_PORT)
 	if err != nil {
 		pl.LogError("[ HANDLE ] failed to connect to target service: %v", err)
 		return
@@ -73,72 +73,72 @@ func handleTCPConnection(clientConn net.Conn) {
 // function that listens on the server port and then forwards all connections to
 // the client port etc
 func SERVER_listenForConnections() {
-    pl.Log("[ SERVER ] Listening for connections on %s:%s", SERVER_IP, SERVER_PORT)
-    serverListener, err := net.Listen(TYPE, SERVER_IP+":"+SERVER_PORT)
-    if err != nil {
-        pl.LogError("failed to listen on server port: %v", err)
-        return
-    }
+	pl.Log("[ SERVER ] Listening for connections on %s:%s", SERVER_IP, SERVER_PORT)
+	serverListener, err := net.Listen(TYPE, SERVER_IP+":"+SERVER_PORT)
+	if err != nil {
+		pl.LogError("failed to listen on server port: %v", err)
+		return
+	}
 
-    for {
-        serverConn, err := serverListener.Accept()
-        pl.Log("[ SERVER ] Received connection from %s", serverConn.RemoteAddr())
-        if err != nil {
-            pl.LogError("failed to accept server connection: %v", err)
-            continue
-        }
-        go handleTCPConnection(serverConn)
-    }
+	for {
+		serverConn, err := serverListener.Accept()
+		pl.Log("[ SERVER ] Received connection from %s", serverConn.RemoteAddr())
+		if err != nil {
+			pl.LogError("failed to accept server connection: %v", err)
+			continue
+		}
+		go handleTCPConnection(serverConn)
+	}
 }
 
 // function that listens for connections coming from the server and then
 // forwards them to the internal service and then sends them back
 func CLIENT_listenAndForwardToInternalService() {
-    pl.Log("[ CLIENT ] Listening for connections on %s:%s", CLIENT_IP, CLIENT_PORT)
-    clientListener, err := net.Listen(TYPE, CLIENT_IP+":"+CLIENT_PORT)
-    if err != nil {
-        pl.LogError("failed to listen on client port: %v", err)
-        return
-    }
+	pl.Log("[ CLIENT ] Listening for connections on %s:%s", CLIENT_IP, CLIENT_PORT)
+	clientListener, err := net.Listen(TYPE, CLIENT_IP+":"+CLIENT_PORT)
+	if err != nil {
+		pl.LogError("failed to listen on client port: %v", err)
+		return
+	}
 
-    // pl.Log("[ CLIENT ] Internal service address: %s:%s", INTERNAL_SERVICE_HOST, INTERNAL_SERVICE_PORT)
+	// pl.Log("[ CLIENT ] Internal service address: %s:%s", INTERNAL_SERVICE_HOST, INTERNAL_SERVICE_PORT)
 
-    for {
-        clientConn, err := clientListener.Accept()
-        if err != nil {
-            pl.LogError("failed to accept client connection: %v", err)
-            continue
-        }
+	for {
+		clientConn, err := clientListener.Accept()
+		if err != nil {
+			pl.LogError("failed to accept client connection: %v", err)
+			continue
+		}
 
-        pl.Log("[ CLIENT ] Received connection from %s", clientConn.RemoteAddr())
+		pl.Log("[ CLIENT ] Received connection from %s", clientConn.RemoteAddr())
 
-        internalServiceConn, err := net.Dial(TYPE, INTERNAL_SERVICE_HOST+":"+INTERNAL_SERVICE_PORT)
-        if err != nil {
-            pl.LogError("failed to connect to internal service: %v", err)
-            continue
-        }
+		internalServiceConn, err := net.Dial(TYPE, INTERNAL_SERVICE_HOST+":"+INTERNAL_SERVICE_PORT)
+		if err != nil {
+			pl.LogError("failed to connect to internal service: %v", err)
+			continue
+		}
 
-        done := make(chan bool, 2)
+		done := make(chan bool, 2)
 
-        go func() {
-            _, err := io.Copy(internalServiceConn, clientConn)
-            if err != nil && err != io.EOF {
-                pl.LogError("failed to copy client -> internal service: %v", err)
-            }
-            done <- true
-        }()
+		go func() {
+			_, err := io.Copy(internalServiceConn, clientConn)
+			if err != nil && err != io.EOF {
+				pl.LogError("failed to copy client -> internal service: %v", err)
+			}
+			done <- true
+		}()
 
-        go func() {
-            _, err := io.Copy(clientConn, internalServiceConn)
-            if err != nil && err != io.EOF {
-                pl.LogError("failed to copy internal service -> client: %v", err)
-            }
-            done <- true
-        }()
+		go func() {
+			_, err := io.Copy(clientConn, internalServiceConn)
+			if err != nil && err != io.EOF {
+				pl.LogError("failed to copy internal service -> client: %v", err)
+			}
+			done <- true
+		}()
 
-        <-done
-        <-done
-    }
+		<-done
+		<-done
+	}
 }
 
 func init() {
@@ -149,8 +149,8 @@ func init() {
 	flag.BoolVar(&SERVER_ENABLE, "server", false, "Run server")
 	flag.Parse()
 
-    pl.Log("[ init ] CLIENT_ENABLE: %v", CLIENT_ENABLE)
-    pl.Log("[ init ] SERVER_ENABLE: %v", SERVER_ENABLE)
+	pl.Log("[ init ] CLIENT_ENABLE: %v", CLIENT_ENABLE)
+	pl.Log("[ init ] SERVER_ENABLE: %v", SERVER_ENABLE)
 
 	// if targetAddress == "" {
 	// 	pl.LogError("Addy is required. Specify with -to <ADDRESS >")
@@ -160,34 +160,34 @@ func init() {
 
 func main() {
 
-    pl.Log("Starting fluffyproxy...")
+	pl.Log("Starting fluffyproxy...")
 
-    // log internal service addr
-    pl.Log("Internal service address: %s:%s", INTERNAL_SERVICE_HOST, INTERNAL_SERVICE_PORT)
+	// log internal service addr
+	pl.Log("Internal service address: %s:%s", INTERNAL_SERVICE_HOST, INTERNAL_SERVICE_PORT)
 
-    if CLIENT_ENABLE {
-        go CLIENT_listenAndForwardToInternalService()
-    }
+	if CLIENT_ENABLE {
+		go CLIENT_listenAndForwardToInternalService()
+	}
 
-    if SERVER_ENABLE {
-        go SERVER_listenForConnections()
-    }
+	if SERVER_ENABLE {
+		go SERVER_listenForConnections()
+	}
 
-    if !CLIENT_ENABLE && !SERVER_ENABLE {
-        pl.LogError("No option specified- please run the client or the server")
-        pl.Log("Exiting...")
-        os.Exit(1)
-        return
-    }
+	if !CLIENT_ENABLE && !SERVER_ENABLE {
+		pl.LogError("No option specified- please run the client or the server")
+		pl.Log("Exiting...")
+		os.Exit(1)
+		return
+	}
 
-    if CLIENT_ENABLE && SERVER_ENABLE {
-        pl.LogError("Cannot run both the client and the server at the same time")
-        pl.Log("Exiting...")
-        os.Exit(1)
-        return
-    }
+	if CLIENT_ENABLE && SERVER_ENABLE {
+		pl.LogError("Cannot run both the client and the server at the same time")
+		pl.Log("Exiting...")
+		os.Exit(1)
+		return
+	}
 
-    select {}
+	select {}
 
 }
 
