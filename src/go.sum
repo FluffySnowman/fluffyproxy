@@ -1,2 +1,4 @@
 github.com/fluffysnowman/prettylogger v0.1.2 h1:fQnRPiQczzEbUM9sYXm0C/h+9cULWW9skvpFqEn8dUQ=
 github.com/fluffysnowman/prettylogger v0.1.2/go.mod h1:VyOUY4sPzTEfud9+wFYeuZyCASIKKUiJpAHAWbicRQk=
+github.com/hashicorp/yamux v0.1.2 h1:XtB8kyFOyHXYVFnwT5C3+Bdo8gArse7j2AQ0DA0Uey8=
+github.com/hashicorp/yamux v0.1.2/go.mod h1:C+zze2n6e/7wshOZep2A70/aQU6QBRWJO/G6FT1wIns=

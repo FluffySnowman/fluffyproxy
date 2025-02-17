@@ -5,212 +5,227 @@ import (
 	"io"
 	"net"
 	"os"
-
-	// "os"
+	"sync"
+	"time"
 
 	pl "github.com/fluffysnowman/prettylogger"
+	"github.com/hashicorp/yamux"
 )
 
 const (
-	HOST = "0.0.0.0"
-	PORT = "8084"
-	TYPE = "tcp"
+	SERVER_PUBLIC_IP    = "0.0.0.0"
+	SERVER_PUBLIC_PORT  = "42069"
+	SERVER_CONTROL_PORT = "6969"
+
+	SERVER_ADDR = "192.168.1.96"
+
+	INTERNAL_SERVICE_HOST = "10.69.42.16"
+	INTERNAL_SERVICE_PORT = "8000"
 )
 
-const SERVER_IP = "192.168.1.96"
-const SERVER_PORT = "42069"
-
-const CLIENT_IP = "172.17.0.1"
-const CLIENT_PORT = "6969"
-
-const INTERNAL_SERVICE_HOST = "10.69.42.16"
-const INTERNAL_SERVICE_PORT = "8000"
-
-var targetAddress string
 var CLIENT_ENABLE bool
 var SERVER_ENABLE bool
 
-// Takes a tcp connection and forwards it to the target addy
-func handleTCPConnection(clientConn net.Conn) {
-	defer clientConn.Close()
+var (
+	controlSession *yamux.Session
+	sessionMutex   sync.RWMutex
+)
 
-	pl.Log("[ HANDLE ] received connection: %v", clientConn.RemoteAddr())
+func setControlSession(session *yamux.Session) {
+	sessionMutex.Lock()
+	controlSession = session
+	sessionMutex.Unlock()
+}
 
-	targetConn, err := net.Dial(TYPE, CLIENT_IP+":"+CLIENT_PORT)
-	if err != nil {
-		pl.LogError("[ HANDLE ] failed to connect to target service: %v", err)
-		return
-	}
-	defer targetConn.Close()
+func getControlSession() *yamux.Session {
+	sessionMutex.RLock()
+	defer sessionMutex.RUnlock()
+	return controlSession
+}
 
-	pl.Log("connected to target service?: %v", targetAddress)
+func bridgeConnections(conn1, conn2 net.Conn) {
+	defer conn1.Close()
+	defer conn2.Close()
 
-	done := make(chan bool, 2)
-
+	done := make(chan struct{}, 2)
 	go func() {
-		_, err := io.Copy(targetConn, clientConn)
-		if err != nil && err != io.EOF {
-			pl.LogError("FAILED TO COPY CLIENT -> target: %v", err)
-		}
-		done <- true
+		_, _ = io.Copy(conn1, conn2)
+		done <- struct{}{}
 	}()
-
 	go func() {
-		_, err := io.Copy(clientConn, targetConn)
-		if err != nil && err != io.EOF {
-			pl.LogError("ERROR COPYING TARGET -> client: %v", err)
-		}
-		done <- true
+		_, _ = io.Copy(conn2, conn1)
+		done <- struct{}{}
 	}()
-
-	<-done
 	<-done
 }
 
-// func forwardConnTcpToIP() {
-// }
+func handleControlConnection(conn net.Conn) {
+	pl.Log("[ SERVER ] Persistent ctrl conn established from %v", conn.RemoteAddr())
 
-// function that listens on the server port and then forwards all connections to
-// the client port etc
-func SERVER_listenForConnections() {
-	pl.Log("[ SERVER ] Listening for connections on %s:%s", SERVER_IP, SERVER_PORT)
-	serverListener, err := net.Listen(TYPE, SERVER_IP+":"+SERVER_PORT)
+	config := yamux.DefaultConfig()
+	config.KeepAliveInterval = 30 * time.Second
+	config.ConnectionWriteTimeout = 10 * time.Second
+
+	session, err := yamux.Server(conn, config)
 	if err != nil {
-		pl.LogError("failed to listen on server port: %v", err)
+		pl.LogError("[ SERVER ] Failed to multiplex session: %v", err)
+		conn.Close()
 		return
 	}
 
+	setControlSession(session)
+
 	for {
-		serverConn, err := serverListener.Accept()
+		_, err := session.Accept()
 		if err != nil {
-			pl.LogError("failed to accept server connection: %v", err)
+			pl.LogError("[ SERVER ] Yamux session closed: %v", err)
+			break
+		}
+	}
+	setControlSession(nil)
+}
+
+func controlListener() {
+	addr := SERVER_PUBLIC_IP + ":" + SERVER_CONTROL_PORT
+	pl.Log("[ SERVER ] starting ctrl listeneron: %s", addr)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		pl.LogError("[ SERVER ] failed to start ctrl listener: %v", err)
+		return
+	}
+	defer listener.Close()
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			pl.LogError("[ SERVER ] failed to accept ctrl conn: %v", err)
 			continue
 		}
-		pl.Log("[ SERVER ] Received connection from %s", serverConn.RemoteAddr())
-		go handleTCPConnection(serverConn)
+		go handleControlConnection(conn)
 	}
 }
 
-// function that listens for connections coming from the server and then
-// forwards them to the internal service and then sends them back
-func CLIENT_listenAndForwardToInternalService() {
-	pl.Log("[ CLIENT ] Listening for connections on %s:%s", CLIENT_IP, CLIENT_PORT)
-	clientListener, err := net.Listen(TYPE, CLIENT_IP+":"+CLIENT_PORT)
+func externalListener() {
+	addr := SERVER_PUBLIC_IP + ":" + SERVER_PUBLIC_PORT
+	pl.Log("[ SERVER ] starting external listener on : %s", addr)
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		pl.LogError("failed to listen on client port: %v", err)
+		pl.LogError("[ SERVER ] failed to start external listener: %v", err)
 		return
 	}
+	defer listener.Close()
 
 	for {
-		clientConn, err := clientListener.Accept()
+		extConn, err := listener.Accept()
 		if err != nil {
-			pl.LogError("failed to accept client connection: %v", err)
+			pl.LogError("[ SERVER ] failed to accept external conn: %v", err)
+			continue
+		}
+		pl.Log("[ SERVER ] got external conn from %v", extConn.RemoteAddr())
+
+		session := getControlSession()
+		if session == nil {
+			pl.LogError("[ SERVER ] no control/persisted sesh available. rejecting all reqs")
+			extConn.Close()
 			continue
 		}
 
-		go func(clientConn net.Conn) {
-			defer clientConn.Close()
-			pl.Log("[ CLIENT ] Received connection from %s", clientConn.RemoteAddr())
+		stream, err := session.Open()
+		if err != nil {
+			pl.LogError("[ SERVER ] failed ot open substream/stream inside stream?idfk: %v", err)
+			extConn.Close()
+			continue
+		}
+		pl.Log("[ SERVER ] Opened new sub-stream for external connection %v", extConn.RemoteAddr())
 
-			internalServiceConn, err := net.Dial(TYPE, INTERNAL_SERVICE_HOST+":"+INTERNAL_SERVICE_PORT)
+		go bridgeConnections(extConn, stream)
+	}
+}
+
+func runServer() {
+	go controlListener()
+	go externalListener()
+	select {}
+}
+
+func runClient() {
+	for {
+		addr := SERVER_ADDR + ":" + SERVER_CONTROL_PORT
+		pl.Log("[ CLIENT ] dialing server at: %s", addr)
+		conn, err := net.Dial("tcp", addr)
+		if err != nil {
+			pl.LogError("[ CLIENT ] failed to connect to server: %v", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		pl.Log("[ CLIENT ] connected to server. starting yamux sesh")
+
+		config := yamux.DefaultConfig()
+		config.KeepAliveInterval = 30 * time.Second
+		config.ConnectionWriteTimeout = 10 * time.Second
+
+		session, err := yamux.Client(conn, config)
+		if err != nil {
+			pl.LogError("[ CLIENT ] failed to create yamux sesh: %v", err)
+			conn.Close()
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		for {
+			stream, err := session.Accept()
 			if err != nil {
-				pl.LogError("failed to connect to internal service: %v", err)
-				return
+				pl.LogError("[ CLIENT ] yamux session accept err: %v", err)
+				break
 			}
-			defer internalServiceConn.Close()
-
-			done := make(chan bool, 2)
-
-			go func() {
-				_, err := io.Copy(internalServiceConn, clientConn)
-				if err != nil && err != io.EOF {
-					pl.LogError("failed to copy client -> internal service: %v", err)
-				}
-				done <- true
-			}()
-
-			go func() {
-				_, err := io.Copy(clientConn, internalServiceConn)
-				if err != nil && err != io.EOF {
-					pl.LogError("failed to copy internal service -> client: %v", err)
-				}
-				done <- true
-			}()
-
-			<-done
-			<-done
-		}(clientConn)
+			pl.Log("[ CLIENT ] recv new stream for server")
+			go handleStream(stream)
+		}
+		session.Close()
+		pl.Log("[ CLIENT ] yamux sesh closed. reconnectiong in 5s")
+		time.Sleep(5 * time.Second)
 	}
+}
+
+func handleStream(stream net.Conn) {
+	defer stream.Close()
+
+	internalAddr := INTERNAL_SERVICE_HOST + ":" + INTERNAL_SERVICE_PORT
+	pl.Log("[ CLIENT ] connecting to internal service at : %s", internalAddr)
+	internalConn, err := net.Dial("tcp", internalAddr)
+	if err != nil {
+		pl.LogError("[ CLIENT ] failed to conn to internal service: %v", err)
+		return
+	}
+	defer internalConn.Close()
+
+	pl.Log("[ CLIENT ] bridging substream w/ internal service")
+	bridgeConnections(stream, internalConn)
 }
 
 func init() {
 	pl.InitPrettyLogger("SIMPLE2")
-
-	// flag.StringVar(&targetAddress, "to", "", "Address to proxy to")
-	flag.BoolVar(&CLIENT_ENABLE, "client", false, "Run client")
-	flag.BoolVar(&SERVER_ENABLE, "server", false, "Run server")
+	flag.BoolVar(&CLIENT_ENABLE, "client", false, "Run in client mode")
+	flag.BoolVar(&SERVER_ENABLE, "server", false, "Run in server mode")
 	flag.Parse()
-
 	pl.Log("[ init ] CLIENT_ENABLE: %v", CLIENT_ENABLE)
 	pl.Log("[ init ] SERVER_ENABLE: %v", SERVER_ENABLE)
-
-	// if targetAddress == "" {
-	// 	pl.LogError("Addy is required. Specify with -to <ADDRESS >")
-	// 	os.Exit(1)
-	// }
 }
 
 func main() {
-
-	pl.Log("Starting fluffyproxy...")
-
-	// log internal service addr
-	pl.Log("Internal service address: %s:%s", INTERNAL_SERVICE_HOST, INTERNAL_SERVICE_PORT)
-
-	if CLIENT_ENABLE {
-		go CLIENT_listenAndForwardToInternalService()
+	pl.Log("Starting rev tunnel proxy...")
+	if CLIENT_ENABLE && SERVER_ENABLE {
+		pl.LogError("cant run client & server at the same time lol")
+		os.Exit(1)
+	}
+	if !CLIENT_ENABLE && !SERVER_ENABLE {
+		pl.LogError("Specify -server or -client to actually do something")
+		os.Exit(1)
 	}
 
 	if SERVER_ENABLE {
-		go SERVER_listenForConnections()
+		runServer()
+	} else if CLIENT_ENABLE {
+		runClient()
 	}
-
-	if !CLIENT_ENABLE && !SERVER_ENABLE {
-		pl.LogError("No option specified- please run the client or the server")
-		pl.Log("Exiting...")
-		os.Exit(1)
-		return
-	}
-
-	if CLIENT_ENABLE && SERVER_ENABLE {
-		pl.LogError("Cannot run both the client and the server at the same time")
-		pl.Log("Exiting...")
-		os.Exit(1)
-		return
-	}
-
-	select {}
-
 }
-
-/*
-pl.Log("Starting proxy on %s:%s -> %s", HOST, PORT, targetAddress)
-
-tcpListener, err := net.Listen(TYPE, HOST+":"+PORT)
-if err != nil {
-    pl.LogError("[ main.main ] failed to initialize tcp listener: %v", err)
-    os.Exit(1)
-}
-defer tcpListener.Close()
-
-pl.Log("Listening for connections...")
-
-for {
-	clientConn, err := tcpListener.Accept()
-	if err != nil {
-		pl.LogError("failed to accept tcp conection: %v", err)
-		continue
-	}
-	go handleTCPConnection(clientConn)
-}
-*/
