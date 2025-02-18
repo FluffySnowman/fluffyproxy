@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fluffysnowman/fluffyproxy/conf"
+	"github.com/fluffysnowman/fluffyproxy/data"
 	_ "github.com/fluffysnowman/fluffyproxy/data"
 
 	pl "github.com/fluffysnowman/prettylogger"
@@ -25,8 +26,8 @@ const (
   SERVER_CONTROL_PORT = "6969"
 
   // shit that the proxy actually goes to
-	INTERNAL_SERVICE_IP = "10.69.42.16"
-	INTERNAL_SERVICE_PORT = "8000"
+	LOCAL_SERVICE_IP = "10.69.42.16"
+	LOCAL_SERVICE_PORT = "8000"
 )
 
 var CLIENT_ENABLE bool
@@ -211,7 +212,7 @@ func handleStream(stream net.Conn) {
 		tcpStream.SetNoDelay(true)
 	}
 
-	internalAddr := INTERNAL_SERVICE_IP + ":" + INTERNAL_SERVICE_PORT
+	internalAddr := LOCAL_SERVICE_IP + ":" + LOCAL_SERVICE_PORT
 	pl.Log("[ CLIENT ] connecting to internal service at : %s", internalAddr)
 	internalConn, err := net.Dial("tcp", internalAddr)
 	if err != nil {
@@ -235,6 +236,8 @@ func init() {
 	flag.Parse()
 	pl.Log("[ init ] CLIENT_ENABLE: %v", CLIENT_ENABLE)
 	pl.Log("[ init ] SERVER_ENABLE: %v", SERVER_ENABLE)
+  data.SetDefaultServerConfig()
+  data.SetDefaultClientConfig()
 }
 
 func main() {

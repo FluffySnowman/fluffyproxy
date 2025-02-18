@@ -19,9 +19,9 @@ type ServerConfig struct {
 //
 // client doesn't need much config other than the server address
 type ClientConfig struct {
-	ServiceIP     string
-	ServicePort   string
-	ServerAddress string // direct ip:port
+	LocalServiceIP   string
+	LocalServicePort string
+	ServerAddress    string // direct ip:port
 	// ServerIP      string
 	// ServerPort    string
 }
@@ -43,8 +43,8 @@ func SetDefaultServerConfig() {
 
 func SetDefaultClientConfig() {
 
-	GLOBAL_CLIENT_CONFIG.ServiceIP = "0.0.0.0"
-	GLOBAL_CLIENT_CONFIG.ServicePort = "8080"
+	GLOBAL_CLIENT_CONFIG.LocalServiceIP = "0.0.0.0"
+	GLOBAL_CLIENT_CONFIG.LocalServicePort = "8080"
 
 	GLOBAL_CLIENT_CONFIG.ServerAddress = "0.0.0.0:42069"
 
