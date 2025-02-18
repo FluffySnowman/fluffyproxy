@@ -8,19 +8,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fluffysnowman/fluffyproxy/conf"
+	_ "github.com/fluffysnowman/fluffyproxy/conf"
+
 	pl "github.com/fluffysnowman/prettylogger"
 	"github.com/hashicorp/yamux"
 )
 
 const (
 	SERVER_PUBLIC_IP    = "0.0.0.0"
-	SERVER_PUBLIC_PORT  = "42069"
+	SERVER_PUBLIC_PORT  = "42000"
 	SERVER_CONTROL_PORT = "6969"
 
-	SERVER_ADDR = "192.168.1.96"
+	SERVER_ADDR = ""
 
-	INTERNAL_SERVICE_HOST = "10.69.42.16"
-	INTERNAL_SERVICE_PORT = "8000"
+	INTERNAL_SERVICE_HOST = "192.168.1.96"
+	INTERNAL_SERVICE_PORT = "22"
 )
 
 var CLIENT_ENABLE bool
@@ -60,7 +63,10 @@ func bridgeConnections(conn1, conn2 net.Conn) {
 }
 
 func handleControlConnection(conn net.Conn) {
-	pl.Log("[ SERVER ] Persistent ctrl conn established from %v", conn.RemoteAddr())
+	pl.Log(
+		"[ SERVER ] Persistent ctrl conn established from %v",
+		conn.RemoteAddr(),
+	)
 
 	config := yamux.DefaultConfig()
 	config.KeepAliveInterval = 30 * time.Second
@@ -125,18 +131,26 @@ func externalListener() {
 
 		session := getControlSession()
 		if session == nil {
-			pl.LogError("[ SERVER ] no control/persisted sesh available. rejecting all reqs")
+			pl.LogError(
+				"[ SERVER ] no control/persisted sesh available. rejecting all reqs",
+			)
 			extConn.Close()
 			continue
 		}
 
 		stream, err := session.Open()
 		if err != nil {
-			pl.LogError("[ SERVER ] failed ot open substream/stream inside stream?idfk: %v", err)
+			pl.LogError(
+				"[ SERVER ] failed ot open substream/stream inside stream?idfk: %v",
+				err,
+			)
 			extConn.Close()
 			continue
 		}
-		pl.Log("[ SERVER ] Opened new sub-stream for external connection %v", extConn.RemoteAddr())
+		pl.Log(
+			"[ SERVER ] Opened new sub-stream for external connection %v",
+			extConn.RemoteAddr(),
+		)
 
 		go bridgeConnections(extConn, stream)
 	}
@@ -213,6 +227,8 @@ func init() {
 }
 
 func main() {
+	conf.PrintAllKeyTypes()
+	conf.LoadConfigFile()
 	pl.Log("Starting rev tunnel proxy...")
 	if CLIENT_ENABLE && SERVER_ENABLE {
 		pl.LogError("cant run client & server at the same time lol")
