@@ -16,14 +16,14 @@ import (
 )
 
 const (
-	SERVER_PUBLIC_IP    = "0.0.0.0"
+	SERVER_PUBLIC_IP    = "192.168.1.96"
 	SERVER_PUBLIC_PORT  = "42000"
 	SERVER_CONTROL_PORT = "6969"
 
-	SERVER_ADDR = ""
+	SERVER_ADDR = "192.168.1.96"
 
-	INTERNAL_SERVICE_HOST = "192.168.1.96"
-	INTERNAL_SERVICE_PORT = "22"
+	INTERNAL_SERVICE_HOST = "10.69.42.16"
+	INTERNAL_SERVICE_PORT = "8000"
 )
 
 var CLIENT_ENABLE bool
@@ -204,6 +204,10 @@ func runClient() {
 func handleStream(stream net.Conn) {
 	defer stream.Close()
 
+	if tcpStream, ok := stream.(*net.TCPConn); ok {
+		tcpStream.SetNoDelay(true)
+	}
+
 	internalAddr := INTERNAL_SERVICE_HOST + ":" + INTERNAL_SERVICE_PORT
 	pl.Log("[ CLIENT ] connecting to internal service at : %s", internalAddr)
 	internalConn, err := net.Dial("tcp", internalAddr)
@@ -212,6 +216,10 @@ func handleStream(stream net.Conn) {
 		return
 	}
 	defer internalConn.Close()
+
+	if tcpInternal, ok := internalConn.(*net.TCPConn); ok {
+		tcpInternal.SetNoDelay(true)
+	}
 
 	pl.Log("[ CLIENT ] bridging substream w/ internal service")
 	bridgeConnections(stream, internalConn)
