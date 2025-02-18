@@ -1,4 +1,7 @@
-client shit
 
-this should be splitted or fielded idek
+server_ip 192.168.1.96
+server_port 6969
+
+app_ip 10.69.42.16
+app_port 8000
 
