@@ -16,13 +16,16 @@ import (
 )
 
 const (
-	SERVER_PUBLIC_IP    = "192.168.1.96"
-	SERVER_PUBLIC_PORT  = "42000"
-	SERVER_CONTROL_PORT = "6969"
+	// address that the internal service is accessible by
+	SERVER_LISTEN_IP    = "192.168.1.96"
+	SERVER_LISTEN_PORT  = "42000"
 
-	SERVER_ADDR = "192.168.1.96"
+	// address the client connects to
+	SERVER_CONTROL_IP = "192.168.1.96"
+  SERVER_CONTROL_PORT = "6969"
 
-	INTERNAL_SERVICE_HOST = "10.69.42.16"
+  // shit that the proxy actually goes to
+	INTERNAL_SERVICE_IP = "10.69.42.16"
 	INTERNAL_SERVICE_PORT = "8000"
 )
 
@@ -92,7 +95,7 @@ func handleControlConnection(conn net.Conn) {
 }
 
 func controlListener() {
-	addr := SERVER_PUBLIC_IP + ":" + SERVER_CONTROL_PORT
+	addr := SERVER_CONTROL_IP + ":" + SERVER_CONTROL_PORT
 	pl.Log("[ SERVER ] starting ctrl listeneron: %s", addr)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -112,7 +115,7 @@ func controlListener() {
 }
 
 func externalListener() {
-	addr := SERVER_PUBLIC_IP + ":" + SERVER_PUBLIC_PORT
+	addr := SERVER_LISTEN_IP + ":" + SERVER_LISTEN_PORT
 	pl.Log("[ SERVER ] starting external listener on : %s", addr)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -164,7 +167,7 @@ func runServer() {
 
 func runClient() {
 	for {
-		addr := SERVER_ADDR + ":" + SERVER_CONTROL_PORT
+		addr := SERVER_CONTROL_IP + ":" + SERVER_CONTROL_PORT
 		pl.Log("[ CLIENT ] dialing server at: %s", addr)
 		conn, err := net.Dial("tcp", addr)
 		if err != nil {
@@ -208,7 +211,7 @@ func handleStream(stream net.Conn) {
 		tcpStream.SetNoDelay(true)
 	}
 
-	internalAddr := INTERNAL_SERVICE_HOST + ":" + INTERNAL_SERVICE_PORT
+	internalAddr := INTERNAL_SERVICE_IP + ":" + INTERNAL_SERVICE_PORT
 	pl.Log("[ CLIENT ] connecting to internal service at : %s", internalAddr)
 	internalConn, err := net.Dial("tcp", internalAddr)
 	if err != nil {

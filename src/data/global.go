@@ -8,14 +8,44 @@ package data
 
 // Struct for all the configuration values that the server takes
 type ServerConfig struct {
-	ServerIP          string
-	ServerPort        string
-	ServerControlPort string
+	ServerListenAddress string // direct ip:port address
+	ServerListenIP      string // addr listening for external conns
+	ServerListenPort    string // port listening for ext conns
+	ServerControlIP     string // control ip the client connects to
+	ServerControlPort   string // control port the client connects to
 }
 
 // Struct for all the configuration values that the client takes
+//
+// client doesn't need much config other than the server address
 type ClientConfig struct {
-	ClientIP          string
-	ClientPort        string
-	ClientControlPort string
+	ServiceIP     string
+	ServicePort   string
+	ServerAddress string // direct ip:port
+	// ServerIP      string
+	// ServerPort    string
+}
+
+var GLOBAL_SERVER_CONFIG ServerConfig
+var GLOBAL_CLIENT_CONFIG ClientConfig
+
+// setting default shit
+
+func SetDefaultServerConfig() {
+
+	GLOBAL_SERVER_CONFIG.ServerListenIP = "0.0.0.0"
+	GLOBAL_SERVER_CONFIG.ServerListenPort = "7000"
+
+	GLOBAL_SERVER_CONFIG.ServerControlIP = "0.0.0.0"
+	GLOBAL_SERVER_CONFIG.ServerControlPort = "42069"
+
+}
+
+func SetDefaultClientConfig() {
+
+	GLOBAL_CLIENT_CONFIG.ServiceIP = "0.0.0.0"
+	GLOBAL_CLIENT_CONFIG.ServicePort = "8080"
+
+	GLOBAL_CLIENT_CONFIG.ServerAddress = "0.0.0.0:42069"
+
 }
