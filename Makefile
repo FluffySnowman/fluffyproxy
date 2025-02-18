@@ -40,7 +40,7 @@ help:
 
 # formats all go code with golines
 go/fmt-golines:
-	cd $(SRC_DIR) && golines --max-len=80 --tab-len=4 -w .
+	cd $(SRC_DIR) && golines --max-len=80 --tab-len=2 -w .
 
 # runs server
 go/run/server:
