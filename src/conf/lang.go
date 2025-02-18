@@ -80,6 +80,10 @@ func LexConfigFile() Config {
 	return configData
 }
 
+func ParseConfigFile(confData Config) {
+
+}
+
 // type Token struct {
 // }
 

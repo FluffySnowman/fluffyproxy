@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/fluffysnowman/fluffyproxy/conf"
-	_ "github.com/fluffysnowman/fluffyproxy/conf"
+	_ "github.com/fluffysnowman/fluffyproxy/data"
 
 	pl "github.com/fluffysnowman/prettylogger"
 	"github.com/hashicorp/yamux"
