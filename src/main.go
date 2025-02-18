@@ -220,7 +220,7 @@ func handleStream(stream net.Conn) {
 
 	// internalAddr := data.GLOBAL_CLIENT_CONFIG.LocalServiceIP + ":" + data.GLOBAL_CLIENT_CONFIG.LocalServicePort
 	internalAddr := data.GLOBAL_CLIENT_CONFIG.LocalServiceAddress
-  // fmt.Println("internal address: ", internalAddr)
+	// fmt.Println("internal address: ", internalAddr)
 	pl.Log("[ CLIENT ] connecting to internal service at : %s", internalAddr)
 	internalConn, err := net.Dial("tcp", internalAddr)
 	if err != nil {
@@ -275,8 +275,9 @@ func main() {
 
 	conf.PrintAllKeyTypes()
 	if configFile != "" {
-		conf.LoadConfigFile()
+		conf.LoadConfigFile(configFile)
 	}
+	pl.LogInfo("No config file specified")
 
 	pl.Log("Starting rev tunnel proxy...")
 	if CLIENT_ENABLE && SERVER_ENABLE {

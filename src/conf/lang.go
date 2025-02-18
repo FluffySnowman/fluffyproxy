@@ -30,8 +30,13 @@ var CONFIG_CONTENT string
 
 var CONFIG_FIELDS_ARRAY []string
 
-func LoadConfigFile() {
-	configData, err := os.ReadFile("proxy_c") // proxy_c = proxy client
+func LoadConfigFile(configFilePath string) {
+
+	if configFilePath == "" || len(configFilePath) < 1 {
+		configFilePath = "proxy_c"
+	}
+
+	configData, err := os.ReadFile(configFilePath)
 	if err != nil {
 		pl.LogError("[ conf.LoadConfigFile ] failed to read config file: %v", err)
 		os.Exit(1)
@@ -63,7 +68,7 @@ func LoadConfigFile() {
 	fmt.Println("lexed config data below")
 	fmt.Println(lexedConfigData)
 
-  ParseConfigFile(lexedConfigData)
+	ParseConfigFile(lexedConfigData)
 }
 
 func LexConfigFile() Config {
