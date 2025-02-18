@@ -10,7 +10,7 @@ import (
 
 	"github.com/fluffysnowman/fluffyproxy/conf"
 	"github.com/fluffysnowman/fluffyproxy/data"
-	_ "github.com/fluffysnowman/fluffyproxy/data"
+	// _ "github.com/fluffysnowman/fluffyproxy/data"
 
 	pl "github.com/fluffysnowman/prettylogger"
 	"github.com/hashicorp/yamux"
