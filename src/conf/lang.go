@@ -8,12 +8,14 @@ import (
 	// "io/ioutil"
 	"os"
 
+	"github.com/fluffysnowman/fluffyproxy/data"
 	pl "github.com/fluffysnowman/prettylogger"
 )
 
 // all the types of keys like port, hostname etc (the actual keys might change
 // so don't rely on this comment to know what is what lol)
-var ALL_KEY_TYPES = []string{"server_ip", "server_port", "app_port", "app_ip"}
+var ALL_KEY_TYPES_SERVER = []string{"listen", "control", "listen_ip", "listen_port", "control_ip", "control_port"}
+var ALL_KEY_TYPES_CLIENT = []string{"local", "local_service_ip", "local_service_port", "server", "server_ip", "server_port"}
 
 type Entry struct {
 	Key   string
@@ -39,17 +41,29 @@ func LoadConfigFile() {
 	stringifiedConfigData := string(configData)
 	CONFIG_CONTENT = stringifiedConfigData
 
-	fieldedString := strings.Fields(CONFIG_CONTENT)
-	CONFIG_FIELDS_ARRAY = fieldedString
+	lines := strings.Split(CONFIG_CONTENT, "\n")
+	var tokens []string
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+		if trimmedLine == "" || strings.HasPrefix(trimmedLine, "#") {
+			continue
+		}
+		lineTokens := strings.Fields(trimmedLine)
+		tokens = append(tokens, lineTokens...)
+	}
+	CONFIG_FIELDS_ARRAY = tokens
+
 	fmt.Println("config fields array below")
 	fmt.Println(CONFIG_FIELDS_ARRAY)
 
 	lexedConfigData := LexConfigFile()
-	if (lexedConfigData == nil) || (len(lexedConfigData) < 1) {
+	if lexedConfigData == nil || len(lexedConfigData) < 1 {
 		pl.LogFatal("config file has nothing in it or has an unidentified syntax error.")
 	}
 	fmt.Println("lexed config data below")
 	fmt.Println(lexedConfigData)
+
+  ParseConfigFile(lexedConfigData)
 }
 
 func LexConfigFile() Config {
@@ -81,6 +95,38 @@ func LexConfigFile() Config {
 }
 
 func ParseConfigFile(confData Config) {
+	for _, entry := range confData {
+		fmt.Printf("Key: %s, Value: %s\n", entry.Key, entry.Value)
+	}
+
+	for i := 0; i < len(confData); i++ {
+		switch confData[i].Key {
+
+		// server shit
+		case "listen":
+			data.GLOBAL_SERVER_CONFIG.ServerListenAddress = confData[i].Value
+		case "control":
+			data.GLOBAL_SERVER_CONFIG.ServerControlAddress = confData[i].Value
+		case "listen_ip":
+			data.GLOBAL_SERVER_CONFIG.ServerListenIP = confData[i].Value
+		case "listen_port":
+			data.GLOBAL_SERVER_CONFIG.ServerListenPort = confData[i].Value
+		case "control_ip":
+			data.GLOBAL_SERVER_CONFIG.ServerControlIP = confData[i].Value
+		case "control_port":
+			data.GLOBAL_SERVER_CONFIG.ServerControlPort = confData[i].Value
+
+		// client shit
+		case "local_service_ip":
+			data.GLOBAL_CLIENT_CONFIG.LocalServiceIP = confData[i].Value
+		case "local_service_port":
+			data.GLOBAL_CLIENT_CONFIG.LocalServicePort = confData[i].Value
+		case "local":
+			data.GLOBAL_CLIENT_CONFIG.LocalServiceAddress = confData[i].Value
+		case "server":
+			data.GLOBAL_CLIENT_CONFIG.ServerCtrlAddress = confData[i].Value
+		}
+	}
 
 }
 
@@ -88,5 +134,5 @@ func ParseConfigFile(confData Config) {
 // }
 
 func PrintAllKeyTypes() {
-	fmt.Println("all key types", ALL_KEY_TYPES)
+	fmt.Println("all key types", ALL_KEY_TYPES_SERVER)
 }

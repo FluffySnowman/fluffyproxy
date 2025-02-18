@@ -1,7 +1,6 @@
 
-server_ip 192.168.1.96
-server_port 6969
+local 10.69.42.16:8000
+server 192.168.1.96:7272
 
-app_ip 10.69.42.16
-app_port 8000
+# this should be a comment
 

@@ -20,8 +20,8 @@ type ServerConfig struct {
 //
 // client doesn't need much config other than the server address
 type ClientConfig struct {
-	ServerCtrlAddress       string // direct ip:port to server control addr
-  LocalServiceAddress string // direct ip:port to local service/internal service
+	ServerCtrlAddress   string // direct ip:port to server control addr
+	LocalServiceAddress string // direct ip:port to local service/internal service
 	LocalServiceIP      string
 	LocalServicePort    string
 	// ServerIP      string
