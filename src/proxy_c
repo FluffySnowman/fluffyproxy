@@ -3,6 +3,7 @@ local 10.69.42.16:8000
 
 # this should be a comment
 
-server 192.168.1.96:8777
+server 192.168.1.96:7070
+
 
 

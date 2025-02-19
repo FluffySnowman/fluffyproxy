@@ -1,2 +1,5 @@
-server shit
+# server shit
+
+listen 192.168.1.96:7001
+control 192.168.1.96:7070
 
