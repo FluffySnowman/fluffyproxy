@@ -1,0 +1,7 @@
+#+title: Scratch & Notes & Todos
+
+- [x] create lexer and parser for configuraiton language
+- [x] allow configuration to be passed as cli args
+- [x] add multiplexing (yamux)
+- [ ] add documentation
+- [ ] create web based control panel (not requeired rn but cool idea)
