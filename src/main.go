@@ -242,28 +242,32 @@ func init() {
 
 	// data.SetDefaultServerConfig()
 	// data.SetDefaultClientConfig()
+	originalUsage := flag.Usage
+
+	flag.Usage = func() {
+		originalUsage()
+		fmt.Println("\nExample:")
+		fmt.Println("  [SERVER] fp -server -listen '192.168.1.96:8989' -control '0.0.0.0:42069'")
+		fmt.Println("  [CLIENT] fp -client -server-control-addr '0.0.0.0:42069' -local '10.69.42.16:8000'")
+	}
 
 	flag.BoolVar(&CLIENT_ENABLE, "client", false, "Run in client mode")
 	flag.BoolVar(&SERVER_ENABLE, "server", false, "Run in server mode")
-
 	flag.StringVar(&configFile, "f", "", "Path to config file")
 	flag.StringVar(&configFile, "file", "", "Path to config file")
-	flag.StringVar(&configFile, "c", "", "Path to config file")
-	flag.StringVar(&configFile, "config", "", "Path to config file")
-
+	flag.StringVar(&configFile, "c", "", "Same as -f")
+	flag.StringVar(&configFile, "config", "", "Same as -f OR --file")
 	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerListenAddress, "listen", "0.0.0.0:7000", "[Server] listen Address IP:PORT")
-	// flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerListenIP, "listen", "0.0.0.0", "Server listen IP")
-	// flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerListenPort, "port", "7000", "Server listen port")
 	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerControlAddress, "control", "0.0.0.0:42069", "[Server] control Address IP:PORT")
-	// flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerControlIP, "control", "0.0.0.0", "Server control IP")
-	// flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerControlPort, "control-port", "42069", "Server control port")
-
-	flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.ServerCtrlAddress, "server-addr", "0.0.0.0:42069", "[Client] Server control address IP:PORT")
+	flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.ServerCtrlAddress, "server-control-addr", "0.0.0.0:42069", "[Client] Server control address IP:PORT")
 	flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.LocalServiceAddress, "local", "0.0.0.0:8080", "[Client] Local service Address IP:PORT")
-	// flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.LocalServiceIP, "local", "0.0.0.0", "[Client] Local service IP ")
-	// flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.LocalServicePort, "local-port", "8080", "Local service port (client)")
 
 	flag.Parse()
+
+	if len(os.Args) > 1 && (os.Args[1] == "-h" || os.Args[1] == "--help" || os.Args[1] == "-help") {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	pl.Log("[ init ] CLIENT_ENABLE: %v", CLIENT_ENABLE)
 	pl.Log("[ init ] SERVER_ENABLE: %v", SERVER_ENABLE)
