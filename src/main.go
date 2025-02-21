@@ -41,7 +41,31 @@ var (
 
 	controlSession *yamux.Session
 	sessionMutex   sync.RWMutex
+
+	activeClient    string
+	activeClientMux sync.RWMutex
 )
+
+func setActiveClient(clientAddr string) bool {
+	activeClientMux.Lock()
+	defer activeClientMux.Unlock()
+
+	if activeClient != "" {
+		return false
+	}
+	activeClient = clientAddr
+	return true
+}
+
+func removeActiveClient(clientAddr string) {
+	activeClientMux.Lock()
+	defer activeClientMux.Unlock()
+
+	if activeClient == clientAddr {
+		activeClient = ""
+		pl.Log("[ SERVER ] active client %v removed", clientAddr)
+	}
+}
 
 func setControlSession(session *yamux.Session) {
 	sessionMutex.Lock()
@@ -72,10 +96,16 @@ func bridgeConnections(conn1, conn2 net.Conn) {
 }
 
 func handleControlConnection(conn net.Conn) {
-	pl.Log(
-		"[ SERVER ] Persistent ctrl conn established from %v",
-		conn.RemoteAddr(),
-	)
+	clientAddr := conn.RemoteAddr().String()
+
+	if !setActiveClient(clientAddr) {
+		pl.LogError("[ SERVER ] Connection rejected - imagine being a skid lol haha")
+		conn.Write([]byte("REJECT\n"))
+		conn.Close()
+		return
+	}
+
+	pl.Log("[ SERVER ] Persistent ctrl conn established from : %v", clientAddr)
 
 	config := yamux.DefaultConfig()
 	config.KeepAliveInterval = 30 * time.Second
@@ -84,11 +114,18 @@ func handleControlConnection(conn net.Conn) {
 	session, err := yamux.Server(conn, config)
 	if err != nil {
 		pl.LogError("[ SERVER ] Failed to multiplex session: %v", err)
+		removeActiveClient(clientAddr)
 		conn.Close()
 		return
 	}
 
 	setControlSession(session)
+
+	defer func() {
+		setControlSession(nil)
+		removeActiveClient(clientAddr)
+		conn.Close()
+	}()
 
 	for {
 		_, err := session.Accept()
@@ -97,7 +134,6 @@ func handleControlConnection(conn net.Conn) {
 			break
 		}
 	}
-	setControlSession(nil)
 }
 
 func controlListener() {
@@ -173,6 +209,22 @@ func runServer() {
 	select {}
 }
 
+func checkForRejection(conn net.Conn) bool {
+	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+
+	buf := make([]byte, 7)
+	n, err := conn.Read(buf)
+	if err == nil && n == 7 && string(buf) == "REJECT\n" {
+		pl.LogError("[ CLIENT ] skid detected. thou shalt not pass")
+		os.Exit(1)
+		return true
+	}
+
+	// Reset the read deadline
+	conn.SetReadDeadline(time.Time{})
+	return false
+}
+
 func runClient() {
 	for {
 		pl.Log("[ CLIENT ] dialing server at: %s", data.GLOBAL_CLIENT_CONFIG.ServerCtrlAddress)
@@ -182,6 +234,11 @@ func runClient() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
+
+		if checkForRejection(conn) {
+			continue
+		}
+
 		pl.Log("[ CLIENT ] connected to server. starting yamux sesh")
 
 		config := yamux.DefaultConfig()
