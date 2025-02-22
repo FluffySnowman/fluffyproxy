@@ -63,25 +63,25 @@ on system2 and vice versa.
 
 ### Example with the configuration language
 
-Create a file `server` and `client` (or any other name you can
+Create a file `fp_server` and `fp_client` (or any other name you can
 remember) in the current directory on each respective machine.
 
 ```sh
-touch server
-touch client
+touch fp_server
+touch fp_client
 ```
 
-Add the following to the server file:
+Add the following to the fp_server file:
 
 ```conf
 # server listens for external connections on the below addy
-listen 192.168.1.96:7001
+listen 192.168.1.96:42000
 
 # the addy of the control connection that the client connects to
 control 192.168.1.96:7070
 ```
 
-Add the following to the client file:
+Add the following to the fp_client file:
 
 ```conf
 # addy of the internel service to expose to the web
@@ -91,15 +91,28 @@ local 10.69.42.16:8000
 server 192.168.1.96:7070
 ```
 
-To start the server and client-
-
-server:
+Start the server:
 
 ```sh
+fp -server -f fp_server
 ```
 
+Start the client:
+
 ```sh
+fp -client -f fp_client
 ```
+
+Now the service on `10.69.42.16:8000` should be accessible from `192.168.1.96:42000`
+
+> [!NOTE]
+> The default address for the SERVER control `0.0.0.0:42069` with the
+> listen address being `0.0.0.0:7000`.
+
+> [!NOTE]
+> the default control address of the SERVER (FROM THE CLIENT) is
+> `0.0.0.0:42069` with the default local service address (on the
+> client) is `0.0.0.0:8080`.
 
 ### Example with cli arguments
 
