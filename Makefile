@@ -5,8 +5,12 @@ PYTHON := python3
 
 SRC_DIR := src
 SRC_MAIN_PATH := $(SRC_DIR)/main.go
-SRC_BUILD_BIN_NAME := prox
+SRC_BUILD_BIN_NAME := fp
+SRC_RELEASE_CMD := mkdir -p release/ && cd $(SRC_DIR) && $(GO) build -o $(SRC_BUILD_BIN_NAME) && $(GO) build -ldflags "-s -w" -trimpath -o fp .
+SRC_RELEASE_DIR := release
+SRC_RELEASE_COPY_CMD := cp -v $(SRC_DIR)/$(SRC_BUILD_BIN_NAME) $(SRC_RELEASE_DIR)/$(SRC_BUILD_BIN_NAME)
 
+# not used anymore
 PROXY_ARGS += -to
 PROXY_ARGS += localhost:8000
 
@@ -53,6 +57,11 @@ go/run/client:
 # builds code and outputs to executable file
 go/build/all:
 	cd $(SRC_DIR) && $(GO) build -o $(SRC_BUILD_BIN_NAME) main.go
+
+# builds for release and copies executable to release directory
+go/release:
+	$(SRC_RELEASE_CMD)
+	$(SRC_RELEASE_COPY_CMD)
 
 # runs http server with python
 net/serve:

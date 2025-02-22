@@ -14,8 +14,22 @@ import (
 
 // all the types of keys like port, hostname etc (the actual keys might change
 // so don't rely on this comment to know what is what lol)
-var ALL_KEY_TYPES_SERVER = []string{"listen", "control", "listen_ip", "listen_port", "control_ip", "control_port"}
-var ALL_KEY_TYPES_CLIENT = []string{"local", "local_service_ip", "local_service_port", "server", "server_ip", "server_port"}
+var ALL_KEY_TYPES_SERVER = []string{
+	"listen",       // addr that the server listens on for conns IP:PORT
+	"control",      // IP:PORT of the control service (what the client connects to)
+	"listen_ip",    // ip of server (not implemneted, use listen instead)
+	"listen_port",  // port of server (not implemented, use listen instead)
+	"control_ip",   // ip of control service (not implemented, use control instead)
+	"control_port", // port of control service (not implemented, use control instead)
+}
+var ALL_KEY_TYPES_CLIENT = []string{
+	"local",              // IP:PORT of the local service
+	"local_service_ip",   // ip of local servecie (not implemented, use local instead)
+	"local_service_port", // port of local service (not implemented, use local instead)
+	"server",             // IP:PORT of the server control service
+	"server_ip",          // ip of the server control service (not implemented, use server instead)
+	"server_port",        // port of the server control service (not implemented, use server instead)
+}
 
 type Entry struct {
 	Key   string
@@ -112,24 +126,24 @@ func ParseConfigFile(confData Config) {
 			data.GLOBAL_SERVER_CONFIG.ServerListenAddress = confData[i].Value
 		case "control":
 			data.GLOBAL_SERVER_CONFIG.ServerControlAddress = confData[i].Value
-		case "listen_ip":
+		case "listen_ip": // not implemented
 			data.GLOBAL_SERVER_CONFIG.ServerListenIP = confData[i].Value
-		case "listen_port":
+		case "listen_port": // not implemented
 			data.GLOBAL_SERVER_CONFIG.ServerListenPort = confData[i].Value
-		case "control_ip":
+		case "control_ip": // not implemented
 			data.GLOBAL_SERVER_CONFIG.ServerControlIP = confData[i].Value
-		case "control_port":
+		case "control_port": // not implemented
 			data.GLOBAL_SERVER_CONFIG.ServerControlPort = confData[i].Value
 
 		// client shit
-		case "local_service_ip":
-			data.GLOBAL_CLIENT_CONFIG.LocalServiceIP = confData[i].Value
-		case "local_service_port":
-			data.GLOBAL_CLIENT_CONFIG.LocalServicePort = confData[i].Value
 		case "local":
 			data.GLOBAL_CLIENT_CONFIG.LocalServiceAddress = confData[i].Value
 		case "server":
 			data.GLOBAL_CLIENT_CONFIG.ServerCtrlAddress = confData[i].Value
+		case "local_service_ip": // not implemented
+			data.GLOBAL_CLIENT_CONFIG.LocalServiceIP = confData[i].Value
+		case "local_service_port": // not implemented
+			data.GLOBAL_CLIENT_CONFIG.LocalServicePort = confData[i].Value
 		}
 	}
 
