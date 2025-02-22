@@ -3,6 +3,10 @@
 A proxy built in golang that allows exposing a local service to the
 web behind NAT/firewalls etc. similar to cloudflare tunnels or FRP.
 
+Great for minecraft servers/game servers, web servers and any other
+tcp service that you want to expose to the web from your local network
+without port forwarding or changing any firewall/nat configuration.
+
 <hr />
 
 > [!NOTE]
@@ -51,7 +55,7 @@ service. The client and server communicate using a control connection.
 This essentially allows exposeing a local service to the web behing a
 firewall or NAT- similar to how cloudflare tunnels or FRP work.
 
-Here's the network architecture of our example-
+Here's the network architecture of our example:
 
 Running the server on system1 and the client on system2.
 
@@ -73,7 +77,7 @@ touch fp_client
 
 Add the following to the fp_server file:
 
-```conf
+```config
 # server listens for external connections on the below addy
 listen 192.168.1.96:8989
 
@@ -83,7 +87,7 @@ control 0.0.0.0:42069
 
 Add the following to the fp_client file:
 
-```conf
+```config
 # addy of the internel service to expose to the web
 local 10.69.42.16:8000
 
@@ -129,6 +133,22 @@ Client:
 
 ```sh
 fp -client -server-control-addr '0.0.0.0:42069' -local '10.69.42.16:8000'
+```
+
+## List of all available keys for the coniguration language
+
+Server
+
+```config
+listen <address>    # Example: 0.0.0.0:80  - listen for external connections.
+control <address>   # Example: 10.0.1.7000 - connected to by client
+```
+
+Client
+
+```config
+local <address>     # Example: 0.0.0.0:3000 - address of the local service
+server <address>    # Example: 10.0.1.7000  - address of the server control
 ```
 
 <!-- ### Install script -->
