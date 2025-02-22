@@ -1,5 +1,19 @@
 # FluffyProxy
 
+<!--toc:start-->
+- [FluffyProxy](#fluffyproxy)
+  - [Installation](#installation)
+    - [Using curl or wget](#using-curl-or-wget)
+        - [Curl](#curl)
+        - [Wget](#wget)
+    - [From source](#from-source)
+  - [Usage](#usage)
+    - [How does this work ?](#how-does-this-work)
+    - [Example with the configuration language](#example-with-the-configuration-language)
+    - [Example with cli arguments](#example-with-cli-arguments)
+  - [List of all available keys for the coniguration language](#list-of-all-available-keys-for-the-coniguration-language)
+<!--toc:end-->
+
 A proxy built in golang that allows exposing a local service to the
 web behind NAT/firewalls etc. similar to cloudflare tunnels or FRP.
 
@@ -9,11 +23,11 @@ without port forwarding or changing any firewall/nat configuration.
 
 <hr />
 
-> [!NOTE]
-> Documentation is not complete yet. This project is still in
-> development- do not expect things to work properly since this
-> project is not meant to be collaborated with cos this is just a tool
-> I've mady for myself and the code happens to be public.
+<!-- > [!NOTE] -->
+<!-- > Documentation is not complete yet. This project is still in -->
+<!-- > development- do not expect things to work properly since this -->
+<!-- > project is not meant to be collaborated with cos this is just a tool -->
+<!-- > I've mady for myself and the code happens to be public. -->
 
 ## Installation
 
@@ -25,13 +39,13 @@ into /usr/local/bin/fp and make it executable.
 ##### Curl
 
 ```sh
-sudo curl -L -o /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v0.1.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
+sudo curl -L -o /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.0.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
 ```
 
 ##### Wget
 
 ```sh
-sudo wget -O /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v0.1.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
+sudo wget -O /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.0.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
 ```
 
 ### From source
@@ -77,7 +91,7 @@ touch fp_client
 
 Add the following to the fp_server file:
 
-```config
+```javascript
 # server listens for external connections on the below addy
 listen 192.168.1.96:8989
 
@@ -87,7 +101,7 @@ control 0.0.0.0:42069
 
 Add the following to the fp_client file:
 
-```config
+```javascript
 # addy of the internel service to expose to the web
 local 10.69.42.16:8000
 
@@ -139,17 +153,19 @@ fp -client -server-control-addr '0.0.0.0:42069' -local '10.69.42.16:8000'
 
 Server
 
-```config
+```javascript
 listen <address>    # Example: 0.0.0.0:80  - listen for external connections.
 control <address>   # Example: 10.0.1.7000 - connected to by client
 ```
 
 Client
 
-```config
+```javascript
 local <address>     # Example: 0.0.0.0:3000 - address of the local service
 server <address>    # Example: 10.0.1.7000  - address of the server control
 ```
+
+<hr />
 
 <!-- ### Install script -->
 <!-- This script will download the latest release from the releases page -->
