@@ -2,16 +2,16 @@
 
 <!--toc:start-->
 - [FluffyProxy](#fluffyproxy)
-  - [Installation](#installation)
-    - [Using curl or wget](#using-curl-or-wget)
-        - [Curl](#curl)
-        - [Wget](#wget)
-    - [From source](#from-source)
-  - [Usage](#usage)
-    - [How does this work ?](#how-does-this-work)
-    - [Example with the configuration language](#example-with-the-configuration-language)
-    - [Example with cli arguments](#example-with-cli-arguments)
-  - [List of all available keys for the coniguration language](#list-of-all-available-keys-for-the-coniguration-language)
+- [Installation](#installation)
+  - [Using curl or wget](#using-curl-or-wget)
+      - [Curl](#curl)
+      - [Wget](#wget)
+  - [From source](#from-source)
+- [Usage](#usage)
+  - [How does this work ?](#how-does-this-work)
+  - [Example with the configuration language](#example-with-the-configuration-language)
+  - [Example with cli arguments](#example-with-cli-arguments)
+- [List of all available keys for the coniguration language](#list-of-all-available-keys-for-the-coniguration-language)
 <!--toc:end-->
 
 A proxy built in golang that allows exposing a local service to the
@@ -29,26 +29,26 @@ without port forwarding or changing any firewall/nat configuration.
 <!-- > project is not meant to be collaborated with cos this is just a tool -->
 <!-- > I've mady for myself and the code happens to be public. -->
 
-## Installation
+# Installation
 
-### Using curl or wget
+## Using curl or wget
 
 The commands below download the latest release from the releases page
 into /usr/local/bin/fp and make it executable.
 
-##### Curl
+#### Curl
 
 ```sh
 sudo curl -L -o /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.0.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
 ```
 
-##### Wget
+#### Wget
 
 ```sh
 sudo wget -O /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.0.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
 ```
 
-### From source
+## From source
 
 ```sh
 git clone https://github.com/FluffySnowman/fluffyproxy
@@ -58,9 +58,9 @@ make go/release
 
 The executable will be at `./release/fp`
 
-## Usage
+# Usage
 
-### How does this work ?
+## How does this work ?
 
 When a user connects to the server, the server forwards the connection
 to the client. The client then forwards the connection to the local
@@ -79,7 +79,7 @@ When anything connects to `192.168.1.96:8989` on system1, the
 connection is then forwarded/proxied all the way to `10.69.42.16:8000`
 on system2 and vice versa.
 
-### Example with the configuration language
+## Example with the configuration language
 
 Create a file `fp_server` and `fp_client` (or any other name you can
 remember) in the current directory on each respective machine.
@@ -132,7 +132,7 @@ Now the service on `10.69.42.16:8000` should be accessible from `192.168.1.96:42
 > `0.0.0.0:42069` with the default local service address (on the
 > client) is `0.0.0.0:8080`.
 
-### Example with cli arguments
+## Example with cli arguments
 
 The cli arguments do the exact same thing as the configuration
 language and are just a faster way of getting things done.
@@ -149,7 +149,7 @@ Client:
 fp -client -server-control-addr '0.0.0.0:42069' -local '10.69.42.16:8000'
 ```
 
-## List of all available keys for the coniguration language
+# List of all available keys for the coniguration language
 
 Server
 
