@@ -75,10 +75,10 @@ Add the following to the fp_server file:
 
 ```conf
 # server listens for external connections on the below addy
-listen 192.168.1.96:42000
+listen 192.168.1.96:8989
 
 # the addy of the control connection that the client connects to
-control 192.168.1.96:7070
+control 0.0.0.0:42069
 ```
 
 Add the following to the fp_client file:
@@ -88,7 +88,7 @@ Add the following to the fp_client file:
 local 10.69.42.16:8000
 
 # address of the server control connection
-server 192.168.1.96:7070
+server 0.0.0.0:42069
 ```
 
 Start the server:
