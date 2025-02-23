@@ -15,20 +15,22 @@ import (
 // all the types of keys like port, hostname etc (the actual keys might change
 // so don't rely on this comment to know what is what lol)
 var ALL_KEY_TYPES_SERVER = []string{
-    "listen",       // addr that the server listens on for conns IP:PORT
-    "control",      // IP:PORT of the control service (what the client connects to)
-    "listen_ip",    // ip of server (not implemneted, use listen instead)
-    "listen_port",  // port of server (not implemented, use listen instead)
-    "control_ip",   // ip of control service (not implemented, use control instead)
-    "control_port", // port of control service (not implemented, use control instead)
+	"listen",             // addr that the server listens on for conns IP:PORT
+	"control",            // IP:PORT of the control service (what the client connects to)
+	"listen_ip",          // ip of server (not implemneted, use listen instead)
+	"listen_port",        // port of server (not implemented, use listen instead)
+	"control_ip",         // ip of control service (not implemented, use control instead)
+	"control_port",       // port of control service (not implemented, use control instead)
+	"client_whitelist",   // ip whitelist of clients that can connect to the server
+	"external_whitelist", // ip's that can access the server externally
 }
 var ALL_KEY_TYPES_CLIENT = []string{
-    "local",              // IP:PORT of the local service
-    "local_service_ip",   // ip of local servecie (not implemented, use local instead)
-    "local_service_port", // port of local service (not implemented, use local instead)
-    "server",             // IP:PORT of the server control service
-    "server_ip",          // ip of the server control service (not implemented, use server instead)
-    "server_port",        // port of the server control service (not implemented, use server instead)
+	"local",              // IP:PORT of the local service
+	"local_service_ip",   // ip of local servecie (not implemented, use local instead)
+	"local_service_port", // port of local service (not implemented, use local instead)
+	"server",             // IP:PORT of the server control service
+	"server_ip",          // ip of the server control service (not implemented, use server instead)
+	"server_port",        // port of the server control service (not implemented, use server instead)
 }
 
 type Entry struct {
@@ -134,6 +136,10 @@ func ParseConfigFile(confData Config) {
 			data.GLOBAL_SERVER_CONFIG.ServerControlIP = confData[i].Value
 		case "control_port": // not implemented
 			data.GLOBAL_SERVER_CONFIG.ServerControlPort = confData[i].Value
+		case "client_whitelist":
+			data.GLOBAL_SERVER_CONFIG.ClientWhitelistIPs = confData[i].Value
+		case "external_whitelist":
+			data.GLOBAL_SERVER_CONFIG.ExternalWhitelistIPs = confData[i].Value
 
 		// client shit
 		case "local":

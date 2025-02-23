@@ -40,7 +40,7 @@ var (
 )
 
 func parseIPs(s string) []string {
-	parts := strings.Split(s, " ")
+	parts := strings.Split(s, ",")
 	for i, part := range parts {
 		parts[i] = strings.TrimSpace(part)
 	}
@@ -328,8 +328,8 @@ func init() {
 	flag.Usage = func() {
 		originalUsage()
 		fmt.Println("\nExample:")
-		fmt.Println("  [SERVER] fp -server -listen '192.168.1.96:8989' -control '0.0.0.0:42069' -client-whitelist '192.168.1.100 192.168.1.101' -external-whitelist '1.1.1.1 8.8.8.8'")
-		fmt.Println("  ^ Whitelist IP's should be seperated by spaces")
+		fmt.Println("  [SERVER] fp -server -listen '192.168.1.96:8989' -control '0.0.0.0:42069' -client-whitelist '192.168.1.100,192.168.1.101' -external-whitelist '1.1.1.1,8.8.8.8'")
+		fmt.Println("  ^ Whitelist IP's should be comma seperated")
 		fmt.Println("  [CLIENT] fp -client -server-control-addr '0.0.0.0:42069' -local '10.69.42.16:8000'")
 	}
 
@@ -341,19 +341,19 @@ func init() {
 	flag.StringVar(&configFile, "config", "", "Same as -f OR --file")
 	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerListenAddress, "listen", "0.0.0.0:7000", "[Server] listen Address IP:PORT")
 	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerControlAddress, "control", "0.0.0.0:42069", "[Server] control Address IP:PORT")
-	flag.StringVar(&clientWhitelistFlag, "client-whitelist", "", "[Server] Comma-separated list of allowed client IPs")
-	flag.StringVar(&externalWhitelistFlag, "external-whitelist", "", "[Server] Comma-separated list of allowed external IPs")
+	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ClientWhitelistIPs, "client-whitelist", "", "[Server] Comma-separated list of allowed client IPs")
+	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ExternalWhitelistIPs, "external-whitelist", "", "[Server] Comma-separated list of allowed external IPs")
 	flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.ServerCtrlAddress, "server-control-addr", "0.0.0.0:42069", "[Client] Server control address IP:PORT")
 	flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.LocalServiceAddress, "local", "0.0.0.0:8080", "[Client] Local service Address IP:PORT")
 	flag.Parse()
 
-	if clientWhitelistFlag != "" {
-		allowedClientIPs = parseIPs(clientWhitelistFlag)
+	if data.GLOBAL_SERVER_CONFIG.ClientWhitelistIPs != "" {
+		allowedClientIPs = parseIPs(data.GLOBAL_SERVER_CONFIG.ClientWhitelistIPs)
 	} else {
 		allowedClientIPs = []string{"192.168.1.1"}
 	}
-	if externalWhitelistFlag != "" {
-		allowedExternalIPs = parseIPs(externalWhitelistFlag)
+	if data.GLOBAL_SERVER_CONFIG.ExternalWhitelistIPs != "" {
+		allowedExternalIPs = parseIPs(data.GLOBAL_SERVER_CONFIG.ExternalWhitelistIPs)
 	} else {
 		allowedExternalIPs = []string{"1.1.1.1"}
 	}
@@ -377,6 +377,18 @@ func main() {
 	} else {
 		pl.LogInfo("No config file specified")
 	}
+
+	if data.GLOBAL_SERVER_CONFIG.ClientWhitelistIPs != "" {
+		allowedClientIPs = parseIPs(data.GLOBAL_SERVER_CONFIG.ClientWhitelistIPs)
+	} else {
+		allowedClientIPs = []string{"192.168.1.1"}
+	}
+	if data.GLOBAL_SERVER_CONFIG.ExternalWhitelistIPs != "" {
+		allowedExternalIPs = parseIPs(data.GLOBAL_SERVER_CONFIG.ExternalWhitelistIPs)
+	} else {
+		allowedExternalIPs = []string{"1.1.1.1"}
+	}
+
 
 	pl.Log("Starting rev tunnel proxy...")
 	if CLIENT_ENABLE && SERVER_ENABLE {

@@ -4,6 +4,8 @@ local 10.69.42.16:8000
 # this should be a comment
 
 server 192.168.1.96:7070
+server_port 7070
+server_ip 192.168.1.96
 
 
 

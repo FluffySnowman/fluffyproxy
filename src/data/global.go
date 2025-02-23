@@ -8,12 +8,14 @@ package data
 
 // Struct for all the configuration values that the server takes
 type ServerConfig struct {
-	ServerListenAddress  string // direct ip:port address
-	ServerListenIP       string // addr listening for external conns
-	ServerListenPort     string // port listening for ext conns
-	ServerControlAddress string // control direct ip:port address
-	ServerControlIP      string // control ip the client connects to
-	ServerControlPort    string // control port the client connects to
+	ServerListenAddress  string   // direct ip:port address
+	ServerListenIP       string   // addr listening for external conns
+	ServerListenPort     string   // port listening for ext conns
+	ServerControlAddress string   // control direct ip:port address
+	ServerControlIP      string   // control ip the client connects to
+	ServerControlPort    string   // control port the client connects to
+	ClientWhitelistIPs   string // list of ips (for clients) that are allowed to connect to control
+	ExternalWhitelistIPs string // list of ips that are allowed to access the service
 }
 
 // Struct for all the configuration values that the client takes
