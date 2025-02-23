@@ -15,20 +15,20 @@ import (
 // all the types of keys like port, hostname etc (the actual keys might change
 // so don't rely on this comment to know what is what lol)
 var ALL_KEY_TYPES_SERVER = []string{
-	"listen",       // addr that the server listens on for conns IP:PORT
-	"control",      // IP:PORT of the control service (what the client connects to)
-	"listen_ip",    // ip of server (not implemneted, use listen instead)
-	"listen_port",  // port of server (not implemented, use listen instead)
-	"control_ip",   // ip of control service (not implemented, use control instead)
-	"control_port", // port of control service (not implemented, use control instead)
+    "listen",       // addr that the server listens on for conns IP:PORT
+    "control",      // IP:PORT of the control service (what the client connects to)
+    "listen_ip",    // ip of server (not implemneted, use listen instead)
+    "listen_port",  // port of server (not implemented, use listen instead)
+    "control_ip",   // ip of control service (not implemented, use control instead)
+    "control_port", // port of control service (not implemented, use control instead)
 }
 var ALL_KEY_TYPES_CLIENT = []string{
-	"local",              // IP:PORT of the local service
-	"local_service_ip",   // ip of local servecie (not implemented, use local instead)
-	"local_service_port", // port of local service (not implemented, use local instead)
-	"server",             // IP:PORT of the server control service
-	"server_ip",          // ip of the server control service (not implemented, use server instead)
-	"server_port",        // port of the server control service (not implemented, use server instead)
+    "local",              // IP:PORT of the local service
+    "local_service_ip",   // ip of local servecie (not implemented, use local instead)
+    "local_service_port", // port of local service (not implemented, use local instead)
+    "server",             // IP:PORT of the server control service
+    "server_ip",          // ip of the server control service (not implemented, use server instead)
+    "server_port",        // port of the server control service (not implemented, use server instead)
 }
 
 type Entry struct {

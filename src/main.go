@@ -6,33 +6,26 @@ import (
 	"io"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/fluffysnowman/fluffyproxy/conf"
 	"github.com/fluffysnowman/fluffyproxy/data"
-	_ "github.com/fluffysnowman/fluffyproxy/data"
-
 	pl "github.com/fluffysnowman/prettylogger"
 	"github.com/hashicorp/yamux"
 )
 
-// const (
-// 	// address that the internal service is accessible by
-// 	SERVER_LISTEN_IP    = "192.168.1.96"
-// 	SERVER_LISTEN_PORT  = "42000"
+var (
+	allowedClientIPs   []string
+	allowedExternalIPs []string
 
-// 	// address the client connects to
-// 	SERVER_CONTROL_IP = "192.168.1.96"
-//   SERVER_CONTROL_PORT = "6969"
+	clientWhitelistFlag   string
+	externalWhitelistFlag string
 
-//   // shit that the proxy actually goes to
-// 	LOCAL_SERVICE_IP = "10.69.42.16"
-// 	LOCAL_SERVICE_PORT = "8000"
-// )
-
-// var CLIENT_ENABLE bool
-// var SERVER_ENABLE bool
+	isClientWhitelist   bool
+	isExternalWhitelist bool
+)
 
 var (
 	CLIENT_ENABLE bool
@@ -45,6 +38,23 @@ var (
 	activeClient    string
 	activeClientMux sync.RWMutex
 )
+
+func parseIPs(s string) []string {
+	parts := strings.Split(s, " ")
+	for i, part := range parts {
+		parts[i] = strings.TrimSpace(part)
+	}
+	return parts
+}
+
+func ipAllowed(ip string, allowedIPs []string) bool {
+	for _, allowed := range allowedIPs {
+		if ip == allowed {
+			return true
+		}
+	}
+	return false
+}
 
 func setActiveClient(clientAddr string) bool {
 	activeClientMux.Lock()
@@ -97,6 +107,19 @@ func bridgeConnections(conn1, conn2 net.Conn) {
 
 func handleControlConnection(conn net.Conn) {
 	clientAddr := conn.RemoteAddr().String()
+	ip, _, err := net.SplitHostPort(clientAddr)
+	if err != nil {
+		pl.LogError("[ SERVER ] failed to parse client IP: %v", err)
+		conn.Close()
+		return
+	}
+
+	if !ipAllowed(ip, allowedClientIPs) {
+		pl.LogError("[ SERVER ] connection from %s rejected: IP not whitelisted", ip)
+		conn.Write([]byte("REJECT\n"))
+		conn.Close()
+		return
+	}
 
 	if !setActiveClient(clientAddr) {
 		pl.LogError("[ SERVER ] Connection rejected - imagine being a skid lol haha")
@@ -174,31 +197,34 @@ func externalListener() {
 			pl.LogError("[ SERVER ] failed to accept external conn: %v", err)
 			continue
 		}
-		pl.Log("[ SERVER ] got external conn from %v", extConn.RemoteAddr())
 
+		extIP, _, err := net.SplitHostPort(extConn.RemoteAddr().String())
+		if err != nil {
+			pl.LogError("[ SERVER ] failed to parse external connection IP: %v", err)
+			extConn.Close()
+			continue
+		}
+		if !ipAllowed(extIP, allowedExternalIPs) {
+			pl.LogError("[ SERVER ] external connection from %s rejected: ip not whitelisted", extIP)
+			extConn.Close()
+			continue
+		}
+
+		pl.Log("[ SERVER ] got external conn from %v", extConn.RemoteAddr())
 		session := getControlSession()
 		if session == nil {
-			pl.LogError(
-				"[ SERVER ] no control/persisted sesh available. rejecting all reqs",
-			)
+			pl.LogError("[ SERVER ] no control/persisted sesh available. rejecting all reqs")
 			extConn.Close()
 			continue
 		}
 
 		stream, err := session.Open()
 		if err != nil {
-			pl.LogError(
-				"[ SERVER ] failed ot open substream/stream inside stream?idfk: %v",
-				err,
-			)
+			pl.LogError("[ SERVER ] failed ot open substream/stream inside stream?idfk: %v", err)
 			extConn.Close()
 			continue
 		}
-		pl.Log(
-			"[ SERVER ] Opened new sub-stream for external connection %v",
-			extConn.RemoteAddr(),
-		)
-
+		pl.Log("[ SERVER ] Opened new sub-stream for external connection %v", extConn.RemoteAddr())
 		go bridgeConnections(extConn, stream)
 	}
 }
@@ -219,8 +245,6 @@ func checkForRejection(conn net.Conn) bool {
 		os.Exit(1)
 		return true
 	}
-
-	// Reset the read deadline
 	conn.SetReadDeadline(time.Time{})
 	return false
 }
@@ -304,7 +328,8 @@ func init() {
 	flag.Usage = func() {
 		originalUsage()
 		fmt.Println("\nExample:")
-		fmt.Println("  [SERVER] fp -server -listen '192.168.1.96:8989' -control '0.0.0.0:42069'")
+		fmt.Println("  [SERVER] fp -server -listen '192.168.1.96:8989' -control '0.0.0.0:42069' -client-whitelist '192.168.1.100 192.168.1.101' -external-whitelist '1.1.1.1 8.8.8.8'")
+		fmt.Println("  ^ Whitelist IP's should be seperated by spaces")
 		fmt.Println("  [CLIENT] fp -client -server-control-addr '0.0.0.0:42069' -local '10.69.42.16:8000'")
 	}
 
@@ -316,10 +341,22 @@ func init() {
 	flag.StringVar(&configFile, "config", "", "Same as -f OR --file")
 	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerListenAddress, "listen", "0.0.0.0:7000", "[Server] listen Address IP:PORT")
 	flag.StringVar(&data.GLOBAL_SERVER_CONFIG.ServerControlAddress, "control", "0.0.0.0:42069", "[Server] control Address IP:PORT")
+	flag.StringVar(&clientWhitelistFlag, "client-whitelist", "", "[Server] Comma-separated list of allowed client IPs")
+	flag.StringVar(&externalWhitelistFlag, "external-whitelist", "", "[Server] Comma-separated list of allowed external IPs")
 	flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.ServerCtrlAddress, "server-control-addr", "0.0.0.0:42069", "[Client] Server control address IP:PORT")
 	flag.StringVar(&data.GLOBAL_CLIENT_CONFIG.LocalServiceAddress, "local", "0.0.0.0:8080", "[Client] Local service Address IP:PORT")
-
 	flag.Parse()
+
+	if clientWhitelistFlag != "" {
+		allowedClientIPs = parseIPs(clientWhitelistFlag)
+	} else {
+		allowedClientIPs = []string{"192.168.1.1"}
+	}
+	if externalWhitelistFlag != "" {
+		allowedExternalIPs = parseIPs(externalWhitelistFlag)
+	} else {
+		allowedExternalIPs = []string{"1.1.1.1"}
+	}
 
 	if len(os.Args) > 1 && (os.Args[1] == "-h" || os.Args[1] == "--help" || os.Args[1] == "-help") {
 		flag.Usage()
@@ -337,8 +374,9 @@ func main() {
 	conf.PrintAllKeyTypes()
 	if configFile != "" {
 		conf.LoadConfigFile(configFile)
+	} else {
+		pl.LogInfo("No config file specified")
 	}
-	pl.LogInfo("No config file specified")
 
 	pl.Log("Starting rev tunnel proxy...")
 	if CLIENT_ENABLE && SERVER_ENABLE {
