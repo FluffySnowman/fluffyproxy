@@ -3,5 +3,5 @@
 listen 192.168.1.96:8989
 control 0.0.0.0:42069
 client_whitelist 127.0.0.1
-external_whitelist 127.0.0.1,10.69.42.16,192.168.1.96
+external_whitelist 127.0.0.1,10.69.42.16
 

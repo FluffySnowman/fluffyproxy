@@ -25,6 +25,9 @@ var (
 
 	isClientWhitelist   bool
 	isExternalWhitelist bool
+
+	allowAllExternalIPs bool
+	allowAllClientIPs   bool
 )
 
 var (
@@ -49,6 +52,9 @@ func parseIPs(s string) []string {
 
 func ipAllowed(ip string, allowedIPs []string) bool {
 	for _, allowed := range allowedIPs {
+		if allowed == "*" {
+			return true
+		}
 		if ip == allowed {
 			return true
 		}
@@ -388,7 +394,6 @@ func main() {
 	} else {
 		allowedExternalIPs = []string{"1.1.1.1"}
 	}
-
 
 	pl.Log("Starting rev tunnel proxy...")
 	if CLIENT_ENABLE && SERVER_ENABLE {
