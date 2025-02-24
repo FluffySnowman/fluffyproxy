@@ -97,7 +97,21 @@ listen 192.168.1.96:8989
 
 # the addy of the control connection that the client connects to
 control 0.0.0.0:42069
+
+# allowing all ips (for clients) to connect
+client_whitelist *
+
+# allowing all external ips to connect/access the service
+external_whitelist *
 ```
+
+Its recommended to use the `client_whitelist` since anyone with the
+IP:PORT of the control server can connect to the server and control
+it. The `external_whitelist` is also recommended to prevent anyone
+unauthorized from accessing the service.
+
+IPs for the client and external whitelist should be comma seperated
+such as `client_whitelist 127.0.0.1,192.168.1.10,10.69.42.2`
 
 Add the following to the fp_client file:
 
@@ -139,9 +153,14 @@ language and are just a faster way of getting things done.
 
 Server:
 
+(allowing all ips with `*`)
+
 ```sh
-fp -server -listen '192.168.1.96:8989' -control '0.0.0.0:42069'
+fp -server -listen '192.168.1.96:8989' -control '0.0.0.0:42069' -client-whitelist "*" -external-whitelist "*"
 ```
+
+Just like the config file, the `-client_whitelist` and
+`-external-whitelist` should have comma seperated IPs.
 
 Client:
 
@@ -156,6 +175,8 @@ Server
 ```javascript
 listen <address>    # Example: 0.0.0.0:80  - listen for external connections.
 control <address>   # Example: 10.0.1.7000 - connected to by client
+client_whitelist    # Example: 127.0.0.1,192.168.1.10,10.69.42.2
+external_whitelist  # Example: 1.1.1.1,8.8.8.8,192.168.1.69
 ```
 
 Client
