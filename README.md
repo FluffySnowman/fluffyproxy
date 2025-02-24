@@ -39,13 +39,13 @@ into /usr/local/bin/fp and make it executable.
 #### Curl
 
 ```sh
-sudo curl -L -o /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.0.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
+sudo curl -L -o /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.1.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
 ```
 
 #### Wget
 
 ```sh
-sudo wget -O /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.0.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
+sudo wget -O /usr/local/bin/fp https://github.com/FluffySnowman/fluffyproxy/releases/download/v1.1.0/fp_linux_amd64 && sudo chmod +x /usr/local/bin/fp
 ```
 
 ## From source
