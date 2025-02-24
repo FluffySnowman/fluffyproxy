@@ -16,6 +16,8 @@ import (
 	"github.com/hashicorp/yamux"
 )
 
+const FP_CURRENT_VERSION = "v1.1.0"
+
 var (
 	allowedClientIPs   []string
 	allowedExternalIPs []string
@@ -325,6 +327,12 @@ func handleStream(stream net.Conn) {
 }
 
 func init() {
+
+	if len(os.Args) > 1 && (os.Args[1] == "-v" || os.Args[1] == "--version" || os.Args[1] == "-version") {
+    fmt.Println(FP_CURRENT_VERSION)
+		os.Exit(0)
+	}
+
 	pl.InitPrettyLogger("SIMPLE2")
 
 	// data.SetDefaultServerConfig()
